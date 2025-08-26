@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"path/filepath"
 
 	_ "modernc.org/sqlite"
 )
@@ -18,7 +19,12 @@ type Config struct {
 
 func SetUp() *Config {
 	var cfg Config
-	flag.StringVar(&cfg.SQLiteFile, "sqlite-file", "_data/data.db", "Path to the SQLite database file")
+	flag.StringVar(
+		&cfg.SQLiteFile,
+		"sqlite-file",
+		filepath.Join("_data", "meta.sqlite"),
+		"Path to the SQLite database file",
+	)
 	flag.IntVar(&cfg.Port, "port", 8080, "Port to run the server on")
 	flag.StringVar(&cfg.HostAddr, "host-addr", "0.0.0.0", "Host address to bind the server to")
 	flag.Parse()
