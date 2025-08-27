@@ -12,9 +12,10 @@ import (
 
 // Config is the overall application configuration
 type Config struct {
-	SQLiteFile string
-	Port       int
-	HostAddr   string
+	SQLiteFile    string
+	Port          int
+	HostAddr      string
+	QueriesSource string
 }
 
 func SetUp() *Config {
@@ -27,6 +28,12 @@ func SetUp() *Config {
 	)
 	flag.IntVar(&cfg.Port, "port", 8080, "Port to run the server on")
 	flag.StringVar(&cfg.HostAddr, "host-addr", "0.0.0.0", "Host address to bind the server to")
+	flag.StringVar(
+		&cfg.QueriesSource,
+		"queries-dir",
+		filepath.Join("assets", "queries"),
+		"Directory containing SQL query files",
+	)
 	flag.Parse()
 	return &cfg
 }
@@ -40,9 +47,13 @@ func main() {
 	defer sqlDb.Close()
 
 	// Start server and listen for requests
-	server := NewPipServer(
+	server, err := NewPipServer(
 		fmt.Sprintf("%s:%d", cfg.HostAddr, cfg.Port),
 		sqlDb,
+		cfg.QueriesSource,
 	)
+	if err != nil {
+		log.Fatalf("Error setting up server: %v", err)
+	}
 	log.Fatal(server.Serve())
 }
