@@ -99,11 +99,12 @@ func (r *Repository) CreateProjectVersion(pvi *ProjectVersionInsert, c context.C
 	}
 	_, err = tx.ExecContext(
 		c,
-		"insert into versions (project_id, digest, digest_type, filepath) values (?, ?, ?, ?)",
+		"insert into versions (project_id, digest, digest_type, filepath, version) values (?, ?, ?, ?, ?)",
 		proj.ID,
 		pvi.Digest,
 		pvi.DigestType,
 		pvi.FilePath,
+		pvi.Version,
 	)
 	if err != nil {
 		slog.Error("Unable to insert version", "error", err)
