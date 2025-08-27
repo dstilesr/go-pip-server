@@ -15,6 +15,7 @@ create unique index if not exists idx_project_name on projects (name);
 create table if not exists versions (
     id integer primary key autoincrement,
     project_id integer not null,
+    version nvarchar(64) not null,
     digest nvarchar(128) not null,
     digest_type nvarchar(16) not null, -- Either SHA256, MD5, or BLAKE2_256
     filepath nvarchar(256) not null,

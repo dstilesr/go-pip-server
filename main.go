@@ -18,6 +18,7 @@ type Config struct {
 	QueriesSource string
 }
 
+// SetUp Parses command-line flags and returns the application configuration
 func SetUp() *Config {
 	var cfg Config
 	flag.StringVar(

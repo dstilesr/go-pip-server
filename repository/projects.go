@@ -12,6 +12,7 @@ type Project struct {
 }
 
 // AllProjects represents a collection of all projects along with the last serial number.
+// This will be used to return the response for the /simple/ endpoint.
 type AllProjects struct {
 	LastSerial int64
 	Projects   []*Project
@@ -45,6 +46,7 @@ func (r *Repository) GetOrCreateProject(n string, c context.Context) (*Project, 
 	return &p, nil
 }
 
+// GetAllProjects retrieves all projects from the database along with the highest project ID.
 func (r *Repository) GetAllProjects(c context.Context) (*AllProjects, error) {
 	rows, err := r.DB.QueryContext(c, "select id, name from projects")
 	if err != nil {
