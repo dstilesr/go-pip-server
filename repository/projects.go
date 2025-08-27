@@ -2,21 +2,11 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"log/slog"
+	"strings"
 )
-
-// Project represents a project entity in the database.
-type Project struct {
-	ID   int64  `json:"_last-serial"`
-	Name string `json:"name"`
-}
-
-// AllProjects represents a collection of all projects along with the last serial number.
-// This will be used to return the response for the /simple/ endpoint.
-type AllProjects struct {
-	LastSerial int64
-	Projects   []*Project
-}
 
 // GetOrCreateProject retrieves a project by name, or creates it if it does not exist.
 func (r *Repository) GetOrCreateProject(n string, c context.Context) (*Project, error) {
@@ -71,4 +61,93 @@ func (r *Repository) GetAllProjects(c context.Context) (*AllProjects, error) {
 		Projects:   projects,
 		LastSerial: maxId,
 	}, nil
+}
+
+// GetLatestProjectVersionId retrieves the latest version ID for a given project name,
+// optionally within a transaction.
+func (r *Repository) GetLatestProjectVersionId(pn string, c context.Context, tx *sql.Tx) (int64, error) {
+	qry := `select v.id 
+            from versions as v 
+            join projects as p on v.project_id = p.id 
+            where p.name = ? 
+            order by v.created_at desc, v.id desc
+            limit 1`
+	var id int64
+	var err error = nil
+	if tx != nil {
+		err = tx.QueryRowContext(c, qry, pn).Scan(&id)
+	} else {
+		err = r.DB.QueryRowContext(c, qry, pn).Scan(&id)
+	}
+	return id, err
+}
+
+// CreateProjectVersion creates a new project version along with its metadata in the database.
+func (r *Repository) CreateProjectVersion(pvi *ProjectVersionInsert, c context.Context) error {
+	// Get / create parent project
+	proj, err := r.GetOrCreateProject(pvi.ProjectName, c)
+	if err != nil {
+		slog.Error("Unable to get or create project", "error", err)
+		return err
+	}
+
+	// Insert new version
+	tx, err := r.DB.BeginTx(c, nil)
+	if err != nil {
+		slog.Error("Unable to begin transaction", "error", err)
+		return err
+	}
+	_, err = tx.ExecContext(
+		c,
+		"insert into versions (project_id, digest, digest_type, filepath) values (?, ?, ?, ?)",
+		proj.ID,
+		pvi.Digest,
+		pvi.DigestType,
+		pvi.FilePath,
+	)
+	if err != nil {
+		slog.Error("Unable to insert version", "error", err)
+		tx.Rollback()
+		return err
+	}
+	vId, err := r.GetLatestProjectVersionId(pvi.ProjectName, c, tx)
+	if err != nil {
+		slog.Error("Unable to get latest version ID", "error", err)
+		tx.Rollback()
+		return err
+	}
+
+	// Add metadata fields
+	if len(pvi.Metadata) > 0 {
+		metaQry := makeMetaInsertQuery(vId, len(pvi.Metadata))
+		flatKVs := flattenKVs(pvi.Metadata)
+		_, err = tx.ExecContext(c, metaQry, flatKVs...)
+		if err != nil {
+			slog.Error("Unable to insert metadata", "error", err)
+			tx.Rollback()
+			return err
+		}
+	}
+	tx.Commit()
+	return nil
+}
+
+// makeMetaInsertQuery constructs an SQL insert query template for metadata key-value pairs.
+func makeMetaInsertQuery(vId int64, total int) string {
+	base := "insert into version_metadata_fields (version_id, key, value) values "
+	slots := make([]string, 0, total)
+	for range total {
+		slots = append(slots, fmt.Sprintf("(%d, ?, ?)", vId))
+	}
+	base += strings.Join(slots, ", ")
+	return base
+}
+
+// flattenKVs converts a slice of KeyVal structs into a flat slice of "any" for SQL insertion.
+func flattenKVs(kvs []*KeyVal) []any {
+	out := make([]any, 0, len(kvs)*2)
+	for _, kv := range kvs {
+		out = append(out, kv.Key, kv.Val)
+	}
+	return out
 }

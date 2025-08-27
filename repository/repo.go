@@ -8,11 +8,6 @@ import (
 	"strings"
 )
 
-type Repository struct {
-	DB          *sql.DB
-	QueriesPath string
-}
-
 // NewRepository creates a new Repository instance
 func NewRepository(db *sql.DB, queriesPath string) (*Repository, error) {
 	info, err := os.Stat(queriesPath)

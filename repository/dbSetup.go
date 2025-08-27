@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
@@ -24,5 +25,6 @@ func (r *Repository) SetUpDB() error {
 	if err != nil {
 		return fmt.Errorf("error executing schema SQL: %w", err)
 	}
+	slog.Info("Database tables have been set up successfully")
 	return nil
 }

@@ -22,6 +22,11 @@ func NewPipServer(addr string, db *sql.DB, qp string) (*PipServer, error) {
 		return nil, err
 	}
 
+	err = repo.SetUpDB()
+	if err != nil {
+		return nil, err
+	}
+
 	srv := http.Server{Addr: addr}
 	pip := &PipServer{
 		Server:  &srv,
