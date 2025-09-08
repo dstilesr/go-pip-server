@@ -1,7 +1,7 @@
 
 create table if not exists projects (
     id integer primary key autoincrement,
-    name nvarchar(255) not null,
+    name nvarchar(256) not null,
     status nvarchar(32) not null default 'active',
     created_at datetime default current_timestamp,
     updated_at datetime default current_timestamp

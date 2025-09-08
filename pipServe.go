@@ -3,21 +3,24 @@ package main
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"go-pip-server/repository"
 	"log/slog"
 	"net/http"
+	"os"
 )
 
 type PipServer struct {
-	Server  *http.Server
-	DBConn  *sql.DB
-	Repo    *repository.Repository
-	isSetUp bool
+	Server   *http.Server
+	DBConn   *sql.DB
+	Repo     *repository.Repository
+	isSetUp  bool
+	DataPath string
 }
 
 // NewPipServer Instantiates and sets up a new Pip Server
-func NewPipServer(addr string, db *sql.DB, qp string) (*PipServer, error) {
-	repo, err := repository.NewRepository(db, qp)
+func NewPipServer(db *sql.DB, cfg *Config) (*PipServer, error) {
+	repo, err := repository.NewRepository(db, cfg.QueriesSource)
 	if err != nil {
 		return nil, err
 	}
@@ -26,13 +29,21 @@ func NewPipServer(addr string, db *sql.DB, qp string) (*PipServer, error) {
 	if err != nil {
 		return nil, err
 	}
+	if _, err := os.Stat(cfg.DataPath); os.IsNotExist(err) {
+		err := os.MkdirAll(cfg.DataPath, 0755)
+		if err != nil {
+			slog.Error("Error creating data path directory", "error", err)
+			os.Exit(1)
+		}
+	}
 
-	srv := http.Server{Addr: addr}
+	srv := http.Server{Addr: fmt.Sprintf("%s:%d", cfg.HostAddr, cfg.Port)}
 	pip := &PipServer{
-		Server:  &srv,
-		DBConn:  db,
-		isSetUp: false,
-		Repo:    repo,
+		Server:   &srv,
+		DBConn:   db,
+		isSetUp:  false,
+		Repo:     repo,
+		DataPath: cfg.DataPath,
 	}
 	err = pip.SetUpRoutes()
 	if err != nil {

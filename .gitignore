@@ -33,3 +33,4 @@ go.work.sum
 
 bin/
 _data/
+temp/

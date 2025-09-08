@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"flag"
-	"fmt"
 	"log"
 	"path/filepath"
 
@@ -16,6 +15,7 @@ type Config struct {
 	Port          int
 	HostAddr      string
 	QueriesSource string
+	DataPath      string
 }
 
 // SetUp Parses command-line flags and returns the application configuration
@@ -35,6 +35,12 @@ func SetUp() *Config {
 		filepath.Join("assets", "queries"),
 		"Directory containing SQL query files",
 	)
+	flag.StringVar(
+		&cfg.DataPath,
+		"data-path",
+		filepath.Join("_data", "packages"),
+		"Path to the directory containing package files",
+	)
 	flag.Parse()
 	return &cfg
 }
@@ -48,11 +54,7 @@ func main() {
 	defer sqlDb.Close()
 
 	// Start server and listen for requests
-	server, err := NewPipServer(
-		fmt.Sprintf("%s:%d", cfg.HostAddr, cfg.Port),
-		sqlDb,
-		cfg.QueriesSource,
-	)
+	server, err := NewPipServer(sqlDb, cfg)
 	if err != nil {
 		log.Fatalf("Error setting up server: %v", err)
 	}
