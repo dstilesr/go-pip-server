@@ -35,5 +35,9 @@ type ProjectVersionInsert struct {
 	Digest      string
 	DigestType  string
 	FilePath    string
+	FileType    string
 	Metadata    []*KeyVal
 }
+
+// ProjectFileMeta represents metadata associated with a project file
+type ProjectFileMeta struct{}

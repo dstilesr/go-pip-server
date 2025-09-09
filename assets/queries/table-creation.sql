@@ -20,6 +20,7 @@ create table if not exists versions (
     digest nvarchar(128) not null,
     digest_type nvarchar(16) not null, -- Either SHA256, MD5, or BLAKE2_256
     filepath nvarchar(256) not null,
+    file_type nvarchar(16) not null, -- bdist_wheel or sdist
     created_at datetime default current_timestamp,
     updated_at datetime default current_timestamp,
 

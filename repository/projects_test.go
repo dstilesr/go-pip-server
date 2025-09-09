@@ -51,6 +51,7 @@ func TestCreateProjectVersion(t *testing.T) {
 		Digest:      "abc123",
 		DigestType:  "sha256",
 		FilePath:    "/path/to/file.whl",
+		FileType:    "bdist_wheel",
 	}
 
 	// Create the first version
@@ -110,6 +111,7 @@ func TestCreateProjectVersionWithMetadata(t *testing.T) {
 		DigestType:  "sha256",
 		FilePath:    "/path/to/metadata-file.whl",
 		Metadata:    metadata,
+		FileType:    "bdist_wheel",
 	}
 
 	// Create version with metadata
