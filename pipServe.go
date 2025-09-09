@@ -61,6 +61,7 @@ func (p *PipServer) SetUpRoutes() error {
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/simple/", p.HandleSimpleIndex)
+	mux.HandleFunc("/upload/", p.HandleUpload)
 	p.isSetUp = true
 	p.Server.Handler = mux
 

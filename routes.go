@@ -20,9 +20,36 @@ type SimpleIdxResponse struct {
 	Projects []*repository.Project `json:"projects"`
 }
 
-func ParseForm(w http.ResponseWriter, r *http.Request) {}
+// HandleUpload parses multipart form data from an HTTP request to upload a package.
+func (p *PipServer) HandleUpload(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseMultipartForm(32 << 20)
+	if err != nil {
+		http.Error(w, `{"detail": "Invalid form data"}`, http.StatusBadRequest)
+		return
+	}
+
+	pvi, err := p.PrepareFormData(r.MultipartForm)
+	if err != nil {
+		slog.Error("Error preparing form data", "error", err)
+		http.Error(w, `{"detail": "Invalid form data"}`, http.StatusBadRequest)
+		return
+	}
+
+	err = p.Repo.CreateProjectVersion(pvi, r.Context())
+	if err != nil {
+		slog.Error("Error inserting project version", "error", err)
+		http.Error(w, `{"detail": "Internal Server Error"}`, http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+
+}
 
 func (p *PipServer) HandleSimpleIndex(w http.ResponseWriter, r *http.Request) {
+	if r.Header.Get("Accept") != JSONHeader {
+		http.Error(w, "Not Acceptable", http.StatusNotAcceptable)
+	}
+
 	ps, err := p.Repo.GetAllProjects(r.Context())
 	if err != nil {
 		slog.Error("Error fetching projects", "error", err)
@@ -37,7 +64,7 @@ func (p *PipServer) HandleSimpleIndex(w http.ResponseWriter, r *http.Request) {
 			MaxId:   ps.LastSerial,
 		},
 	}
-	w.Header().Set("Content-Type", "application/vnd.pypi.simple.v1+json")
+	w.Header().Set("Content-Type", JSONHeader)
 	w.Header().Set("X-PyPI-Last-Serial", strconv.FormatInt(ps.LastSerial, 10))
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(&rsp)

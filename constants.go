@@ -7,4 +7,4 @@ const APIVersion = "1.0"
 const JSONHeader = "application/vnd.pypi.simple.v1+json"
 
 // RequiredFields are the fields required to be in package metadata
-const RequiredFields = "name;version;metadata-version"
+const RequiredFields = "name;version;metadata-version;filetype"
