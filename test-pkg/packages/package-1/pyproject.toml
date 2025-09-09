@@ -1,0 +1,6 @@
+[project]
+name = "package1"
+version = "0.0.1"
+description = "Package to test the build system"
+requires-python = ">=3.13"
+dependencies = []
